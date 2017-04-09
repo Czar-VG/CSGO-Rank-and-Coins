@@ -1,6 +1,6 @@
 # Fake-Competitive-Rank-and-Coins (1.2)
--Added more coins
--Made one menu
+Added more coins
+Made one menu
 
 #Credits
 Laam4 - Who made original plugin
