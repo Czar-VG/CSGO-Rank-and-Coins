@@ -5,7 +5,6 @@
 #include <clientprefs>
 
 #pragma semicolon 1
-#pragma newdecls required
 
 #define PLUGIN_VERSION "1.2"
 
@@ -32,7 +31,7 @@ Handle g_arrayCoinsNum = INVALID_HANDLE;
 
 Handle kv = INVALID_HANDLE;
 
-ConVar g_hCvarVersion;
+//ConVar g_hCvarVersion;
 ConVar g_ShowCoins;
 ConVar g_ShowProfileRanks;
 
@@ -49,18 +48,16 @@ public void OnPluginStart()
 	LoadTranslations("common.phrases");
 	LoadTranslations("frank.phrases");
 	
-	g_hCvarVersion = CreateConVar("sm_frank_version", PLUGIN_VERSION, "Fake rank version", FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY|FCVAR_DONTRECORD);
-	g_hCvarVersion.SetString(PLUGIN_VERSION);
-	g_ShowCoins = CreateConVar("sm_frank_coins", "1", "Show legit coins on players, if enabled", _, true, 0.0, true, 1.0);
-	g_ShowProfileRanks = CreateConVar("sm_frank_profileranks", "1", "Show legit profile ranks on players, if enabled", _, true, 0.0, true, 1.0);
+	//g_hCvarVersion = CreateConVar("sm_frank_version", PLUGIN_VERSION, "Fake rank version", FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY|FCVAR_DONTRECORD);
+	//g_hCvarVersion.SetString(PLUGIN_VERSION);
+	g_ShowCoins = CreateConVar("sm_frank_coins", "0", "Show legit coins on players, if enabled", _, true, 0.0, true, 1.0);
+	g_ShowProfileRanks = CreateConVar("sm_frank_profileranks", "0", "Show legit profile ranks on players, if enabled", _, true, 0.0, true, 1.0);
 	
 	RegAdminCmd("sm_elorank", Command_SetElo,  ADMFLAG_GENERIC, "sm_elorank <#userid|name> <0-18>");
 	RegAdminCmd("sm_emblem", Command_SetCoin, ADMFLAG_GENERIC, "sm_emblem <#userid|name> <874-6011>");
 	RegAdminCmd("sm_prorank", Command_SetProfile,  ADMFLAG_GENERIC, "sm_prorank <#userid|name> <0-40>");
 	
-	RegConsoleCmd("sm_coin", Command_CoinMenu);
-	RegConsoleCmd("sm_mm", Command_EloMenu);
-	RegConsoleCmd("sm_profile", Command_ProfileMenu);
+	RegAdminCmd("sm_profile", mainmenu, ADMFLAG_CUSTOM5);
 	
 	AutoExecConfig(true, "frank");
 	
@@ -179,7 +176,7 @@ void BrowseKeyValues(Handle k)
 	} while (KvGotoNextKey(k, false));
 }
 
-public int OnClientCookiesCached(int client)
+public void OnClientCookiesCached(int client)
 {
 	char valueRank[16];
 	char valueProfileRank[16];
@@ -300,6 +297,51 @@ public void Hook_OnThinkPost(int iEnt)
 		SetEntDataArray(iEnt, Offset[2], tempCoin, MAXPLAYERS+1, _, true);
 	} else {
 		SetEntDataArray(iEnt, Offset[2], g_iCoin, MAXPLAYERS+1, _, true);
+	}
+}
+
+public Action:mainmenu(client, args)
+{
+	new Handle:menu = CreateMenu(DIDMenuHandler3);
+	SetMenuTitle(menu, "Choose your Tag Color");
+	AddMenuItem(menu, "0", "Coin");
+	AddMenuItem(menu, "1", "Rank");
+	AddMenuItem(menu, "2", "XP Rank");
+	SetMenuExitButton(menu, true);
+	DisplayMenu(menu, client, 0);	
+}
+
+public DIDMenuHandler3(Handle:menu, MenuAction:action, client, itemNum) 
+{
+	if ( action == MenuAction_Select ) 
+	{
+		decl String:info[4];
+		
+		GetMenuItem(menu, itemNum, info, sizeof(info));
+		int g_color = StringToInt(info);
+		
+		if(g_color == 0)
+		{
+			Command_CoinMenu(client, 0);
+		}
+		if(g_color == 1)
+		{
+			Command_EloMenu(client, 0);
+		}
+		if(g_color == 2)
+		{
+			Command_ProfileMenu(client, 0);
+		}
+		
+	}
+	else if (action == MenuAction_Cancel) 
+	{ 
+		PrintToServer("Client %d's menu was cancelled.  Reason: %d", client, itemNum); 
+	} 
+		
+	else if (action == MenuAction_End)
+	{
+		CloseHandle(menu);
 	}
 }
 
